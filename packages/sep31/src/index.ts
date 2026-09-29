@@ -113,6 +113,7 @@ const IN_FLIGHT_STATUSES = new Set([
  */
 export function mapSep31Status(raw: string): {
   status: string;
+  phase?: "anchor" | "external";
   settled: boolean;
   terminalFailure: boolean;
   awaitingInput: boolean;
@@ -128,7 +129,15 @@ export function mapSep31Status(raw: string): {
     return { status, settled: false, terminalFailure: false, awaitingInput: true };
   }
   if (IN_FLIGHT_STATUSES.has(status)) {
-    return { status, settled: false, terminalFailure: false, awaitingInput: false };
+    return {
+      status,
+      ...(status === "pending_external" || status === "pending_receiver"
+        ? { phase: "external" as const }
+        : {}),
+      settled: false,
+      terminalFailure: false,
+      awaitingInput: false,
+    };
   }
   // Unrecognised status. Same shape as a known in-flight one on purpose: the
   // default must stay fail-open to polling and never to a false "settled".

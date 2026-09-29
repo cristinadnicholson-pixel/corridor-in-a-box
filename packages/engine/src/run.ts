@@ -120,6 +120,7 @@ export async function execute(
   const pollMs =
     rc?.poll_seconds !== undefined ? rc.poll_seconds * 1000 : (deps.reconcilePollMs ?? 2_000);
   const stallThreshold = rc?.stall_polls ?? deps.stallThreshold ?? 10;
+  const externalStallMs = externalStallBudgetMs(corridor);
   const metrics = deps.metrics ?? noopMetrics;
   const startedAt = now();
 
@@ -525,6 +526,7 @@ export async function execute(
         deadlineMs,
         pollMs,
         stallThreshold,
+        externalStallMs,
         corridorId: corridor.id,
         logger: deps.logger,
         metrics: deps.metrics,
@@ -657,6 +659,7 @@ async function resumeRun(
       deadlineMs: now() + corridor.recovery.timeout_seconds * 1000,
       pollMs,
       stallThreshold,
+      externalStallMs: externalStallBudgetMs(corridor),
       corridorId: corridor.id,
       logger: deps.logger,
       metrics: deps.metrics,
@@ -678,4 +681,13 @@ async function resumeRun(
   const done = await advance("completed");
   if (!done.ok) return done;
   return ok(toResult(run, trail));
+}
+
+function externalStallBudgetMs(corridor: Corridor): number {
+  return (
+    Math.min(
+      corridor.recovery.reconcile.external_stall_seconds,
+      corridor.recovery.timeout_seconds,
+    ) * 1000
+  );
 }

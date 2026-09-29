@@ -80,7 +80,7 @@ export function liveness(c: Corridor, now: Date = new Date()): Liveness {
 
   const rc = c.recovery.reconcile;
   if (
-    rc?.poll_seconds !== undefined &&
+    rc.poll_seconds !== undefined &&
     rc.stall_polls !== undefined &&
     rc.stall_polls > 0 &&
     rc.poll_seconds * rc.stall_polls >= c.recovery.timeout_seconds
@@ -88,6 +88,14 @@ export function liveness(c: Corridor, now: Date = new Date()): Liveness {
     warnings.push(
       `recovery.reconcile: poll_seconds (${rc.poll_seconds}) x stall_polls (${rc.stall_polls}) ` +
         `is not below timeout_seconds (${c.recovery.timeout_seconds}) — the stall check can never fire.`,
+    );
+  }
+  if (c.recovery.timeout_seconds <= rc.external_stall_seconds) {
+    warnings.push(
+      `recovery.timeout_seconds (${c.recovery.timeout_seconds}s) does not exceed ` +
+        `recovery.reconcile.external_stall_seconds (${rc.external_stall_seconds}s); the corridor ` +
+        `timeout will end pending_external/pending_receiver waits first. Raise timeout_seconds ` +
+        `for corridors that need the full external stall budget.`,
     );
   }
 

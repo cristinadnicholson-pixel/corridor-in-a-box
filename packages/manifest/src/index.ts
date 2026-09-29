@@ -156,13 +156,15 @@ export const ReconcileSchema = z.object({
   poll_seconds: z.number().int().positive().optional(),
   /** Consecutive identical-status polls before `RECONCILE_STALLED`. 0 disables. */
   stall_polls: z.number().int().nonnegative().optional(),
+  /** Seconds a pending_external/pending_receiver status may stay unchanged before it counts as stalled. */
+  external_stall_seconds: z.number().int().positive().default(21_600),
 });
 
 export const RecoverySchema = z.object({
   max_retries: z.number().int().nonnegative().default(3),
   timeout_seconds: z.number().int().positive().default(900),
   rollback: z.enum(["refund_sender", "hold", "manual"]).default("refund_sender"),
-  reconcile: ReconcileSchema.optional(),
+  reconcile: ReconcileSchema.default(() => ReconcileSchema.parse({})),
 });
 
 /** True when the YYYY-MM-DD part names a real calendar day. `Date` alone is no help:
