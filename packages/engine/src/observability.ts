@@ -5,6 +5,7 @@
 
 import type { Money } from "@corridor/types";
 import type { CorridorState } from "./state";
+import type { LivenessState } from "@corridor/manifest";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -46,16 +47,33 @@ export interface AuditEntry extends LogFields {
   readonly networkFee?: string;
 }
 
+/** Verification decision recorded before the engine claims an idempotency key. */
+export interface AuditDetail {
+  readonly event: "verifying";
+  readonly idempotencyKey: string;
+  readonly corridorId: string;
+  readonly at: number;
+  readonly detail: {
+    readonly liveness: LivenessState;
+    readonly effectiveCap?: string;
+  };
+}
+
 export interface AuditSink {
   record(entry: AuditEntry): Promise<void> | void;
+  recordDetail?(detail: AuditDetail): Promise<void> | void;
 }
 
 /** In-memory audit log for tests/examples. Back this with an append-only table
  *  (or event stream) in production — never update or delete entries. */
 export class InMemoryAuditLog implements AuditSink {
   readonly entries: AuditEntry[] = [];
+  readonly details: AuditDetail[] = [];
   record(entry: AuditEntry): void {
     this.entries.push(entry);
+  }
+  recordDetail(detail: AuditDetail): void {
+    this.details.push(detail);
   }
 }
 
