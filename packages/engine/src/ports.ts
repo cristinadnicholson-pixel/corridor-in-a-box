@@ -179,21 +179,31 @@ export function createMockSubmitter(
   opts: { failSubmit?: boolean; existingRef?: SettlementRef } = {},
 ): SettlementSubmitter {
   let n = 0;
+  const submitted: Array<{ request: SettlementRequest; reference: SettlementRef }> = [];
   const hash = (prefix: string) =>
     `${prefix}${(++n).toString().padStart(64 - prefix.length, "0")}`;
   return {
-    async findExisting(req) {
-      void req;
-      return ok<SettlementRef | undefined>(opts.existingRef);
-    },
     async submit(req) {
-      void req;
       if (opts.failSubmit) {
         return fail("SETTLEMENT_FAILED", "mock submit configured to fail", {
           retryable: true,
         });
       }
-      return ok<SettlementRef>({ stellarTxHash: hash("mocktx"), ledger: 1_000_000 + n });
+      const reference = { stellarTxHash: hash("mocktx"), ledger: 1_000_000 + n };
+      submitted.push({ request: req, reference });
+      return ok<SettlementRef>(reference);
+    },
+    async findExisting(req) {
+      if (opts.existingRef) return ok<SettlementRef | undefined>(opts.existingRef);
+      const found = submitted.find(
+        ({ request }) =>
+          request.to === req.to &&
+          request.memo === req.memo &&
+          request.memoType === req.memoType &&
+          request.amount.asset === req.amount.asset &&
+          request.amount.amount === req.amount.amount,
+      );
+      return ok(found?.reference);
     },
     async refund(req) {
       void req;
