@@ -406,7 +406,10 @@ describe("engine pre-settle gate", () => {
     const store = new InMemoryIdempotencyStore();
     const audit = new InMemoryAuditLog();
     const c = { ...corridor(), proof: undefined };
-    const i = { ...intent("unproven-over-cap"), sourceAmount: { asset: "USDC", amount: "10.01" } };
+    const i = {
+      ...intent("unproven-over-cap"),
+      sourceAmount: { asset: "USDC", amount: "10.01" },
+    };
 
     const r = await execute(i, c, { ...deps(), idempotency: store, audit });
 
@@ -430,14 +433,21 @@ describe("engine pre-settle gate", () => {
 
   it("applies only max_amount to a proven corridor", async () => {
     const c = { ...corridor(), limits: { max_amount: "150" } };
-    const i = { ...intent("proven-over-canary"), sourceAmount: { asset: "USDC", amount: "100" } };
+    const i = {
+      ...intent("proven-over-canary"),
+      sourceAmount: { asset: "USDC", amount: "100" },
+    };
 
     const r = await execute(i, c, { ...deps(), unprovenMaxAmount: "10" });
 
     expect(r.ok).toBe(true);
 
     const overMax = await execute(
-      { ...i, idempotencyKey: "proven-over-max", sourceAmount: { asset: "USDC", amount: "151" } },
+      {
+        ...i,
+        idempotencyKey: "proven-over-max",
+        sourceAmount: { asset: "USDC", amount: "151" },
+      },
       c,
       deps(),
     );
@@ -456,7 +466,10 @@ describe("engine pre-settle gate", () => {
       },
     };
     const i = { ...intent("stale-proof"), sourceAmount: { asset: "USDC", amount: "6" } };
-    const r = await execute(i, c, { ...deps(), now: () => Date.parse("2026-09-29T00:00:00Z") });
+    const r = await execute(i, c, {
+      ...deps(),
+      now: () => Date.parse("2026-09-29T00:00:00Z"),
+    });
 
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("CORRIDOR_UNPROVEN");

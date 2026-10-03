@@ -36,8 +36,6 @@ export type CorridorErrorCode =
   | "PRESETTLE_TX_MISMATCH"
   /** destination missing, no trustline, or not authorized */
   | "PRESETTLE_DESTINATION_UNSAFE"
-  /** The requested payment exceeds the canary cap for an unproven corridor. */
-  | "CORRIDOR_UNPROVEN"
   /** our balance cannot cover amount + fee + reserve */
   | "PRESETTLE_INSUFFICIENT_FUNDS"
   /** firm quote will not survive settle + confirm */
